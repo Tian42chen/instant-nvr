@@ -232,9 +232,7 @@ class Dataset(data.Dataset):
         }
 
         for k in semantic_masks:
-            smask = semantic_masks[k]
-            smask = smask.astype(np.uint8)
-            semantic_masks[k] = smask
+            semantic_masks[k] = semantic_masks[k].astype(np.uint8)
 
         return msk, orig_msk, semantic_masks
 
@@ -314,9 +312,7 @@ class Dataset(data.Dataset):
         msk = cv2.resize(msk, (W, H), interpolation=cv2.INTER_NEAREST)
         orig_msk = cv2.resize(orig_msk, (W, H), interpolation=cv2.INTER_NEAREST)
         for k in semantic_masks:
-            smask = semantic_masks[k]
-            smask = cv2.resize(smask, (W, H), interpolation=cv2.INTER_NEAREST)
-            semantic_masks[k] = smask
+            semantic_masks[k] = cv2.resize(semantic_masks[k], (W, H), interpolation=cv2.INTER_NEAREST)
 
         cam_ind = self.cam_inds[index]
         K = np.array(self.cams['K'][cam_ind])

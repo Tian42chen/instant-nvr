@@ -11,8 +11,7 @@ from typing import *
 from lib.networks.make_network import make_deformer, make_part_network
 from termcolor import cprint
 
-
-def gradient(input: torch.Tensor, output: torch.Tensor, d_out: torch.Tensor = None, create_graph: bool = False, retain_graph: bool = False):
+def gradient(input: torch.Tensor, output: torch.Tensor, d_out: Union[torch.Tensor, None] = None, create_graph: bool = False, retain_graph: bool = False)->torch.Tensor:
     if d_out is not None:
         d_output = d_out
     elif isinstance(output, torch.Tensor):
@@ -31,7 +30,7 @@ def gradient(input: torch.Tensor, output: torch.Tensor, d_out: torch.Tensor = No
         return grads  # to be expanded
 
 
-def compute_val_pair_around_range(pts: torch.Tensor, decoder: Callable[[torch.Tensor], torch.Tensor], diff_range: float, precomputed: torch.Tensor = None):
+def compute_val_pair_around_range(pts: torch.Tensor, decoder: Callable[[torch.Tensor], torch.Tensor], diff_range: float, precomputed: Union[torch.Tensor, None] = None):
     # sample around input point and compute values
     # pts and its random neighbor are concatenated in second dimension
     # if needed, decoder should return multiple values together to save computation
@@ -53,7 +52,7 @@ class GradModule(nn.Module):
     def __init__(self):
         super(GradModule, self).__init__()
 
-    def gradient(self, input: torch.Tensor, output: torch.Tensor, d_out: torch.Tensor = None, create_graph: bool = False, retain_graph: bool = False) -> torch.Tensor:
+    def gradient(self, input: torch.Tensor, output: torch.Tensor, d_out: Union[torch.Tensor, None] = None, create_graph: bool = False, retain_graph: bool = False) -> torch.Tensor:
         return gradient(input, output, d_out, self.training or create_graph, self.training or retain_graph)
 
     def jacobian(self, input: torch.Tensor, output: torch.Tensor):

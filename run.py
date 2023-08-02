@@ -15,29 +15,41 @@ def run_dataset():
 
 def run_network():
     from lib.networks import make_network
+    from lib.networks.renderer import make_renderer
     from lib.datasets import make_data_loader
     from lib.utils.net_utils import load_network
     import tqdm
     import torch
     import time
 
-    network = make_network(cfg).cuda()
-    load_network(network, cfg.trained_model_dir, epoch=cfg.test.epoch)
+    cfg.train.num_workers = 0
+    network=make_network(cfg).cuda()
+    print("Finish initialize networks")
+    renderer = make_renderer(cfg, network)
+    print("Finish initialize renderer")
+    # load_network(network, cfg.trained_model_dir, epoch=cfg.test.epoch)
     network.eval()
 
-    data_loader = make_data_loader(cfg, split='test')
+    data_loader = make_data_loader(cfg, split='train')
+    print("Finish data_loader")
     total_time = 0
-    for batch in tqdm.tqdm(data_loader):
+    epoch=0 
+    for batch in data_loader:
+        print(f"passing epoch {epoch}")
+        epoch+=1
         for k in batch:
             if k != 'meta':
                 batch[k] = batch[k].cuda()
         with torch.no_grad():
             torch.cuda.synchronize()
             start = time.time()
-            network(batch)
+            output=renderer.render(batch)
             torch.cuda.synchronize()
             total_time += time.time() - start
-    print(total_time / len(data_loader))
+        if epoch >2:
+            print("Finish test")
+            break
+    # print(total_time / len(data_loader))
 
 def run_exportdecoder():
     from lib.networks import make_network
@@ -80,6 +92,7 @@ def run_evaluate():
     data_loader = make_data_loader(cfg, split='test')
     renderer = make_renderer(cfg, network)
     evaluator = make_evaluator(cfg)
+    assert evaluator is not None
     for batch in tqdm.tqdm(data_loader):
         for k in batch:
             if k != 'meta':

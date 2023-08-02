@@ -138,7 +138,7 @@ class Trainer(object):
             loss = loss.mean()
 
             optimizer.zero_grad(set_to_none=True)
-            # loss.backward()
+            # loss.backward() %TODO 自定义 loss 的 backward 操作
             self.scaler.scale(loss).backward()
 
             # if cfg.use_amp:

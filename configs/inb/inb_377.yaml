@@ -1,5 +1,5 @@
 task: "inb"
-gpus: [0]
+gpus: [1]
 
 zju_human: ""
 

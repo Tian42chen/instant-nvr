@@ -37,9 +37,9 @@ def make_data_sampler(dataset, shuffle, is_distributed, split):
         if is_distributed:
             return samplers.DistributedSampler(dataset, shuffle=shuffle)
         if shuffle:
-            sampler = torch.utils.data.sampler.RandomSampler(dataset)
+            sampler = torch.utils.data.RandomSampler(dataset)
         else:
-            sampler = torch.utils.data.sampler.SequentialSampler(dataset)
+            sampler = torch.utils.data.SequentialSampler(dataset)
     elif split == 'test':
         if cfg.test.sampler == 'FrameSampler':
             sampler = samplers.FrameSampler(dataset, cfg.test.frame_sampler_interval)
@@ -47,17 +47,17 @@ def make_data_sampler(dataset, shuffle, is_distributed, split):
         if is_distributed:
             return samplers.DistributedSampler(dataset, shuffle=shuffle)
         if shuffle:
-            sampler = torch.utils.data.sampler.RandomSampler(dataset)
+            sampler = torch.utils.data.RandomSampler(dataset)
         else:
-            sampler = torch.utils.data.sampler.SequentialSampler(dataset)
+            sampler = torch.utils.data.SequentialSampler(dataset)
     elif split == 'prune':
         sampler = samplers.FrameSampler(dataset, cfg.prune.frame_sampler_interval)
     elif split == 'val' and not cfg.record_demo:
         sampler = samplers.FrameSampler(dataset, cfg.val.frame_sampler_interval)
     elif split == 'val' and cfg.record_demo:
-        sampler = torch.utils.data.sampler.SequentialSampler(dataset)
+        sampler = torch.utils.data.SequentialSampler(dataset)
     elif split == 'bullet':
-        sampler = torch.utils.data.sampler.SequentialSampler(dataset)
+        sampler = torch.utils.data.SequentialSampler(dataset)
     elif split == 'tmesh':
         sampler = samplers.FrameSampler(dataset, cfg.tmesh.frame_sampler_interval)
     elif split == 'tdmesh':
@@ -73,7 +73,7 @@ def make_batch_data_sampler(cfg, sampler, batch_size, drop_last, max_iter, split
     sampler_meta = getattr(cfg, split).sampler_meta
 
     if batch_sampler == 'default':
-        batch_sampler = torch.utils.data.sampler.BatchSampler(
+        batch_sampler = torch.utils.data.BatchSampler(
             sampler, batch_size, drop_last)
     elif batch_sampler == 'image_size':
         batch_sampler = samplers.ImageSizeBatchSampler(sampler, batch_size,

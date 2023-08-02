@@ -17,7 +17,9 @@ class Renderer:
         t_vals = torch.linspace(0., 1., steps=cfg.N_samples, device=near.device, dtype=near.dtype)
         z_vals = near[..., None] * (1. - t_vals) + far[..., None] * t_vals
 
-        if cfg.perturb > 0. and self.net.training:
+        print(f"t_vals: {t_vals.shape} ",f"z_vals: {z_vals.shape} ")
+
+        if cfg.perturb > 0.:# and self.net.training:
             # get intervals between samples
             mids = .5 * (z_vals[..., 1:] + z_vals[..., :-1])
             upper = torch.cat([mids, z_vals[..., -1:]], -1)

@@ -3,8 +3,9 @@ import os
 
 
 def _evaluator_factory(cfg):
+    from lib.evaluators.if_nerf import Evaluator
     module = cfg.evaluator_module
-    evaluator = importlib.import_module(module).Evaluator()
+    evaluator:Evaluator = importlib.import_module(module).Evaluator()
     return evaluator
 
 

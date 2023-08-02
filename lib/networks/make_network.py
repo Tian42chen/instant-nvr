@@ -1,14 +1,15 @@
 import os
 import importlib
+import torch.nn as nn
 
 
-def make_network(cfg):
+def make_network(cfg)->nn.Module:
     module = cfg.network_module
     network = importlib.import_module(module).Network()
     return network
 
 
-def make_part_network(gcfg, partname, pid):
+def make_part_network(gcfg, partname, pid)->nn.Module:
     from lib.networks.bw_deform.part_base_network import Network
     cfg = getattr(gcfg.partnet, partname)
     module = cfg.module
@@ -39,7 +40,7 @@ def make_viewdir_embedder(cfg):
     return embedder
 
 
-def make_deformer(cfg):
+def make_deformer(cfg)->nn.Module:
     module = cfg.tpose_deformer.module
     deformer = importlib.import_module(module).Deformer(deformer_cfg=cfg.tpose_deformer)
     return deformer

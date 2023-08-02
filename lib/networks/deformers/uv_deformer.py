@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from typing import Union
 from lib.utils.blend_utils import pts_sample_uv
 from lib.networks.make_network import make_embedder
 
@@ -20,7 +21,9 @@ class Deformer(nn.Module):
             nn.Linear(32, 3),
         )
 
-    def forward(self, xyz: torch.Tensor, batch, flag: torch.Tensor = None):
+    def forward(self, xyz: torch.Tensor, batch, flag: Union[torch.Tensor, None] = None):
+        ret = None
+        inds = None
         if flag is not None:
             B, NP, _ = xyz.shape
             # flag: B, N
@@ -28,7 +31,7 @@ class Deformer(nn.Module):
             ret = torch.zeros(B, NP, 3, device=xyz.device, dtype=xyz.dtype)
             inds = flag[0].nonzero(as_tuple=True)[0][:, None].expand(-1, 3)
             xyz = xyz[0].gather(dim=0, index=inds)
-
+        
         uv = pts_sample_uv(xyz, batch['tuv'], batch['tbounds'], mode='bilinear')  # uv: B, 2, N
         uv = uv.permute(0, 2, 1)  # B, N, 2
         uv = uv.view(-1, uv.shape[-1])  # B*N, 2
@@ -38,7 +41,7 @@ class Deformer(nn.Module):
         resd = self.mlp(feat)
         resd_tan = 0.05 * torch.tanh(resd)  # B*N, 3
 
-        if flag is not None:
+        if ret is not None and inds is not None:
             ret[0, inds[:, 0]] = resd_tan.to(ret.dtype, non_blocking=True)  # ignoring batch dimension
             return ret
         else:

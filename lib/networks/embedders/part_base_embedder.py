@@ -40,6 +40,7 @@ class Embedder(nn.Module):
         self.include_input = include_input
         self.use_batch_bounds = use_batch_bounds
         self.n_entries_per_level = nextprime(2**log2_hashmap_size)
+        assert isinstance(self.n_entries_per_level, int)
 
         self.b = b
         self.f = n_features_per_level
@@ -49,15 +50,15 @@ class Embedder(nn.Module):
 
         # every level should have this number of entries per side
         # we'd like the border to be mapped inside 0, 1
-        self.entries_num = [int((self.base_resolution * self.b**i)) for i in range(self.n_levels)]
-        self.entries_cnt = [self.entries_num[i] ** 3 for i in range(self.n_levels)]
-        self.entries_size = [1 / (self.entries_num[i] - 1) for i in range(self.n_levels)]
-        self.entries_min = [0 for i in range(self.n_levels)]
+        entries_num = [int((self.base_resolution * self.b**i)) for i in range(self.n_levels)]
+        entries_cnt = [entries_num[i] ** 3 for i in range(self.n_levels)]
+        entries_size = [1 / (entries_num[i] - 1) for i in range(self.n_levels)]
+        entries_min = [0 for i in range(self.n_levels)]
 
-        self.entries_size = nn.Parameter(torch.tensor(self.entries_size), requires_grad=False)
-        self.entries_num = nn.Parameter(torch.tensor(self.entries_num), requires_grad=False)
-        self.entries_min = nn.Parameter(torch.tensor(self.entries_min), requires_grad=False)
-        self.entries_cnt = nn.Parameter(torch.tensor(self.entries_cnt), requires_grad=False)
+        self.entries_size = nn.Parameter(torch.tensor(entries_size), requires_grad=False)
+        self.entries_num = nn.Parameter(torch.tensor(entries_num), requires_grad=False)
+        self.entries_min = nn.Parameter(torch.tensor(entries_min), requires_grad=False)
+        self.entries_cnt = nn.Parameter(torch.tensor(entries_cnt), requires_grad=False)
         self.entries_sum = nn.Parameter(self.entries_cnt.cumsum(dim=-1), requires_grad=False)
 
         self.start_hash = self.n_levels
