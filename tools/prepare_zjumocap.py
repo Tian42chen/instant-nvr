@@ -518,7 +518,7 @@ def prepare_blend_weights(mocap_data_root, human, params_dir, vertices_dir, smpl
 
 def main():
     """
-    ZJUMOCAP's pre -processing
+    ZJUMOCAP's pre-processing
 
     Inputs
     ----------
@@ -536,7 +536,7 @@ def main():
     bigpose vertices : lbs/bigpose_vertices.npy
     bigpose blend weight : lbs/bigpose_bw.npy
     bigpose uv : bigpose_uv.npy
-    bigpose blend weight for frame i : bweights/{}.npy
+    blend weight for frame i : bweights/{}.npy
     """
     mocap_data_root='../data/zju-mocap'
     smpl_data_root='../data/smpl-meta'
