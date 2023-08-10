@@ -523,7 +523,7 @@ def main():
     Inputs
     ----------
     for every human in zju-mocap : 
-        image path : from annots.npy
+        the number of images: from annots.npy
         params : from params/{}.npy
         vertices : from vertices/{}.npy
     SMPL model : SMPL_NEUTRAL.pkl
@@ -550,8 +550,8 @@ def main():
 
     for human in humans:
         print(f'Processing {human} ...')
-        params_dir=osp.join(mocap_data_root, human, 'params')
-        vertices_dir=osp.join(mocap_data_root, human, 'vertices')
+        params_dir=osp.join(mocap_data_root, human, 'smpl_params')
+        vertices_dir=osp.join(mocap_data_root, human, 'smpl_vertices')
         smpl_path=osp.join(smpl_data_root, 'SMPL_NEUTRAL.pkl')
 
         lbs_root=osp.join(output_root, human, 'lbs')
