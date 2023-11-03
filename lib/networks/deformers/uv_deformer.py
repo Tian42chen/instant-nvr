@@ -3,6 +3,7 @@ import torch.nn as nn
 from typing import Union
 from lib.utils.blend_utils import pts_sample_uv
 from lib.networks.make_network import make_embedder
+from lib.utils.debug_utils import output_debug_log
 
 
 class Deformer(nn.Module):
@@ -21,9 +22,7 @@ class Deformer(nn.Module):
             nn.Linear(32, 3),
         )
 
-    def forward(self, xyz: torch.Tensor, batch, flag: Union[torch.Tensor, None] = None):
-        ret = None
-        inds = None
+    def forward(self, xyz: torch.Tensor, batch, flag: torch.Tensor = None):
         if flag is not None:
             B, NP, _ = xyz.shape
             # flag: B, N
@@ -31,7 +30,7 @@ class Deformer(nn.Module):
             ret = torch.zeros(B, NP, 3, device=xyz.device, dtype=xyz.dtype)
             inds = flag[0].nonzero(as_tuple=True)[0][:, None].expand(-1, 3)
             xyz = xyz[0].gather(dim=0, index=inds)
-        
+
         uv = pts_sample_uv(xyz, batch['tuv'], batch['tbounds'], mode='bilinear')  # uv: B, 2, N
         uv = uv.permute(0, 2, 1)  # B, N, 2
         uv = uv.view(-1, uv.shape[-1])  # B*N, 2
@@ -41,8 +40,14 @@ class Deformer(nn.Module):
         resd = self.mlp(feat)
         resd_tan = 0.05 * torch.tanh(resd)  # B*N, 3
 
-        if ret is not None and inds is not None:
+        if flag is not None:
             ret[0, inds[:, 0]] = resd_tan.to(ret.dtype, non_blocking=True)  # ignoring batch dimension
+            # if ret.isnan().any():
+            #     raise ValueError('NaN detected in deformer output')
+            # if ret.numel()==0:
+            #     output=f"flag: {flag}\n{flag[0].nonzero(as_tuple=True)[0][:, None].expand(-1, 3)}\nret: {ret}\ninds: {inds}\nresd_tan: {resd_tan}"
+            #     output_debug_log(output, "deformer_output.log")
+            #     raise ValueError('Empty deformer output')
             return ret
         else:
             return resd_tan

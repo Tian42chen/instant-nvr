@@ -6,6 +6,7 @@ from .. import embedder
 from lib.utils.net_utils import volume_rendering
 from lib.utils.blend_utils import *
 from lib.networks.bw_deform.inb_part_network_multiassign import Network, compute_val_pair_around_range
+from lib.utils import debug_utils
 
 
 class Renderer:
@@ -17,7 +18,8 @@ class Renderer:
         t_vals = torch.linspace(0., 1., steps=cfg.N_samples, device=near.device, dtype=near.dtype)
         z_vals = near[..., None] * (1. - t_vals) + far[..., None] * t_vals
 
-        print(f"t_vals: {t_vals.shape} ",f"z_vals: {z_vals.shape} ")
+        # output=f'z_vals: {z_vals.shape}\nnear: {near.shape}\nfar: {far.shape}\nray_o: {ray_o.shape}\nray_d: {ray_d.shape}\n'
+        # debug_utils.output_debug_log(output, "nerf")
 
         if cfg.perturb > 0.:# and self.net.training:
             # get intervals between samples
@@ -29,6 +31,13 @@ class Renderer:
             z_vals = lower + (upper - lower) * t_rand
 
         pts = ray_o[:, :, None] + ray_d[:, :, None] * z_vals[..., None]
+
+        debug_utils.save_debug(z_vals, "nerf_z_vals")
+        debug_utils.save_debug(near, "nerf_near")
+        debug_utils.save_debug(far, "nerf_far")
+        debug_utils.save_debug(ray_o, "ray_o")
+        debug_utils.save_debug(ray_d, "ray_d")
+        debug_utils.save_debug(pts, "wpts")
 
         return pts, z_vals
 

@@ -100,7 +100,7 @@ cfg.task = 'nerf4d'
 cfg.gpus = list(range(8))
 # if load the pretrained network
 cfg.pretrained_model = "none"
-cfg.resume = True
+cfg.resume = False
 
 # epoch
 cfg.ep_iter = -1

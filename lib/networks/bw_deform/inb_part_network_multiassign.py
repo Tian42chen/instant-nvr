@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import torch
 from lib.config import cfg
 from lib.utils.blend_utils import *
+from lib.utils import debug_utils
 from .. import embedder
 from lib.utils import net_utils
 from typing import *
@@ -44,7 +45,6 @@ def compute_val_pair_around_range(pts: torch.Tensor, decoder: Callable[[torch.Te
         nei = decoder(neighbor)  # (n_batch, n_masked, 3)
         raw = torch.cat([precomputed, nei], dim=1)
     return raw
-
 
 class GradModule(nn.Module):
     # GradModule is a module that takes gradient based on whether we're in training mode or not
@@ -88,6 +88,11 @@ class Network(GradModule):
             pred_pbw, pnorm = init_pbw[..., :24], init_pbw[..., 24]
             pflag = pnorm < cfg.smpl_thresh  # (B, N, P)
 
+        # if pflag.numel()==0:
+        #     output=f" pflag: {pflag}\n pnorm: {pnorm}\n init_pbw: {init_pbw}\n pose_pts: {pose_pts}\n batch['part_pts'][0]: {batch['part_pts'][0]}\n batch['part_pbw'][0]: {batch['part_pbw'][0]}\n batch['lengths2'][0]: {batch['lengths2'][0]}\n  pred_pbw: {pred_pbw}\n pose_dirs: {pose_dirs}\n batch: {batch}\n"
+        #     debug_utils.output_debug_log(output, "pose_points_to_tpose_points.log")
+        #     raise ValueError('Empty pflag')
+
         pose_pts_part_extend = pose_pts[:, :, None, :].expand(B, N, NUM_PARTS, 3).reshape(B, N*NUM_PARTS, 3)
         pose_dirs_part_extend = pose_dirs[:, :, None, :].expand(B, N, NUM_PARTS, 3).reshape(B, N*NUM_PARTS, 3)
         pred_pbw = pred_pbw.reshape(B, N*NUM_PARTS, 24).permute(0, 2, 1)
@@ -115,7 +120,9 @@ class Network(GradModule):
         pflag = pflag.reshape(B, N, NUM_PARTS)
         resd = resd.reshape(B, N, NUM_PARTS, 3)
 
-        # save_point_cloud(tpose.squeeze()[:64], "debug/tpose_pts_{}.ply".format(get_time()))
+        # if resd.isnan().any():
+        #     debug_utils.save_point_cloud(tpose.squeeze()[:64], "debug/tpose_pts_{}.ply".format(debug_utils.get_time()))
+        #     raise ValueError("NaN detected in resd in part network")
         return tpose, tpose_dirs, resd, pflag, init_bigpose, pnorm
 
     def resd(self, tpts: torch.Tensor, batch):
@@ -129,14 +136,34 @@ class Network(GradModule):
         pose_pts = world_points_to_pose_points(wpts, batch['R'], batch['Th'])
         pose_dirs = world_dirs_to_pose_dirs(viewdir, batch['R'])
 
+        # output=f"pose_pts: {pose_pts.shape}\npose_dirs: {pose_dirs.shape}\n"
+        # output+=f"pose_pts: {pose_pts}\npose_dirs: {pose_dirs}\n"
+        # output+=f"pbw: {batch['pbw'][..., -1:].shape}\npbounds: {batch['pbounds'].shape}\n"
+
+        # debug_utils.save_debug(batch['ppts'], 'ppts')
+        # debug_utils.save_debug(batch['pbounds'], 'pbounds')
+        # debug_utils.save_debug(batch['ray_o'], 'ray_o')
+
         with torch.no_grad():
             pnorm = pts_sample_blend_weights(pose_pts, batch['pbw'][..., -1:], batch['pbounds']) 
-            pnorm = pnorm[0, -1]  # B, 25, N -> N,
-            pind = pnorm < cfg.smpl_thresh  # N,
+            # pnorm = pnorm[0, -1]  # B, 25, N -> N,
+            pind = pnorm[0, -1] < cfg.smpl_thresh  # N,
             pind = pind.nonzero(as_tuple=True)[0][:, None].expand(-1, 3)  # N, remove uncessary sync
+
+            if pind.numel()==0 and 0:
+                debug_utils.save_debug(pose_pts, "pose pts")
+                debug_utils.save_debug(batch['pbounds'], "pbounds")
+                raise ValueError('debug pose_pts')
             viewdir = viewdir[0].gather(dim=0, index=pind)[None]
             pose_pts = pose_pts[0].gather(dim=0, index=pind)[None]
             pose_dirs = pose_dirs[0].gather(dim=0, index=pind)[None]
+
+        # if pose_pts.numel()==0:
+        # output+=f"pind: {pind.shape}\npnorm: {pnorm.shape}\n"
+        # output=f" pind: {pind}\n pnorm: {pnorm}\n pose_pts: {pose_pts}\n pose_dirs: {pose_dirs}\n batch: {batch}\n"
+        # debug_utils.output_debug_log(output, "part_netowrk")
+        
+        # raise ValueError('debug pose_pts')
 
         # transform points from the pose space to the tpose space
         tpose, tpose_dirs, resd, tpose_part_flag, tpts, part_dist = self.pose_points_to_tpose_points(pose_pts, pose_dirs, batch)

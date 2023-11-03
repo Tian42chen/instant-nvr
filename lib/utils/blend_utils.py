@@ -512,6 +512,7 @@ def pts_sample_blend_weights(pts, bw, bounds):
     grid_coords: torch.Tensor = grid_coords * 2 - 1
     # convert xyz to zyx, since the blend weight is indexed by xyz
     grid_coords = grid_coords.flip(-1)
+    #TODO check 有没有越界的点
 
     # the blend weight is indexed by xyz
     bw = bw.permute(0, 4, 1, 2, 3)

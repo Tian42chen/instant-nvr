@@ -15,6 +15,7 @@ from plyfile import PlyData
 import os.path as osp
 from lib.utils.base_utils import project
 from lib.utils.blend_utils import NUM_PARTS, part_bw_map, partnames
+from lib.utils import debug_utils
 
 
 class Dataset(data.Dataset):
@@ -382,6 +383,12 @@ class Dataset(data.Dataset):
         pbounds = if_nerf_dutils.get_bounds(ppts)
         wbounds = if_nerf_dutils.get_bounds(wpts)
 
+        # debug_utils.save_debug(wpts, 'batch_wpts')
+        # debug_utils.save_debug(ppts, 'batch_ppts')
+        # debug_utils.save_debug(wbounds, 'batch_wbounds')
+        # debug_utils.save_debug(pbounds, 'batch_pbounds')
+        # debug_utils.save_debug(pbw, 'batch_pbw')
+
         if cfg.prune_using_hull:
             hull = self.get_hull(index, wbounds)
         else:
@@ -457,6 +464,11 @@ class Dataset(data.Dataset):
             'far': far,
             'mask_at_box': mask_at_box
         }
+
+        # debug_utils.save_debug(ray_o, 'batch_ray_o')
+        # debug_utils.save_debug(ray_d, 'batch_ray_d')
+        # debug_utils.save_debug(near, 'batch_near')
+        # debug_utils.save_debug(far, 'batch_far')
 
         if cfg.train_with_normal:
             # normal is extracted from undistroted image

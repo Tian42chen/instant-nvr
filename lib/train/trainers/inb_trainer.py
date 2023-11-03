@@ -93,9 +93,19 @@ class NetworkWrapper(nn.Module):
             loss += cfg.reg_dist_weight * reg_distortion_loss
 
         if 'resd' in ret:
+            if ret['resd'].isnan().any():
+                raise ValueError("NaN detected in residual")
             offset_loss = torch.norm(ret['resd'], dim=2).mean()
+            if offset_loss.isnan().any() and 0:
+                with open("debug/residual.txt", "a") as f:
+                    f.write(f"residual shape: {ret['resd'].shape}\n")
+                    f.write(f"{ret['resd']}\n")
+                    f.write(f"{torch.norm(ret['resd'], dim=2)}\n")
+                    f.write(f"{torch.norm(ret['resd'], dim=2).mean()}\n")
+                raise ValueError(f"With {split}, NaN detected in offset loss")
             scalar_stats.update({'offset_loss': offset_loss})
-            loss += cfg.resd_loss_weight * offset_loss
+            if not offset_loss.isnan().any():
+                loss += cfg.resd_loss_weight * offset_loss
 
         if 'rgb_res' in ret:
             rgb_resd_loss = torch.norm(ret['rgb_res'], dim=2).mean()
@@ -241,8 +251,8 @@ class NetworkWrapper(nn.Module):
         else:
             raise NotImplementedError
 
-        # if any([v.isnan().any() for v in scalar_stats.values()]):
-        #     cprint("Warning: ", color='yellow', attrs=['bold', 'blink'], end='')
-        #     cprint("forward pass produced nan, pls debug. I'll retry the encoding", color='red')
+        if any([v.isnan().any() for v in scalar_stats.values()]):
+            cprint("Warning: ", color='yellow', attrs=['bold', 'blink'], end='')
+            cprint("forward pass produced nan, pls debug. I'll retry the encoding", color='red')
 
         return ret, loss, scalar_stats, image_stats

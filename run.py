@@ -1,4 +1,5 @@
 from lib.config import cfg, args
+from lib.utils import debug_utils
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning) 
 
@@ -6,11 +7,26 @@ warnings.filterwarnings("ignore", category=UserWarning)
 def run_dataset():
     from lib.datasets import make_data_loader
     import tqdm
+    import numpy as np
 
     cfg.train.num_workers = 0
-    data_loader = make_data_loader(cfg, split='test')
+    data_loader = make_data_loader(cfg, split='train')
+    bounds_array=[]
+
     for batch in tqdm.tqdm(data_loader):
+        # debug_utils.output_debug_log(batch, 'dataset')
+        bounds_array.append(debug_utils.to_numpy(batch['bounds'])[0])
         pass
+    
+    bounds_array=np.array(bounds_array)
+    print(bounds_array.shape)
+
+    min_bounds=np.min(bounds_array[:,:,0,:], axis=0)[:, np.newaxis, :]
+    max_bounds=np.max(bounds_array[:,:,1,:], axis=0)[:, np.newaxis, :]
+
+    extra_bounds=np.concatenate([min_bounds, max_bounds], axis=1)
+    print(extra_bounds.shape)
+    np.save('debug/extra_bounds', extra_bounds)
 
 
 def run_network():
@@ -46,9 +62,9 @@ def run_network():
             output=renderer.render(batch)
             torch.cuda.synchronize()
             total_time += time.time() - start
-        if epoch >2:
-            print("Finish test")
-            break
+        # if epoch >2:
+        #     print("Finish test")
+        #     break
     # print(total_time / len(data_loader))
 
 def run_exportdecoder():
@@ -89,7 +105,7 @@ def run_evaluate():
                            epoch=cfg.test.epoch)
     network.eval()
 
-    data_loader = make_data_loader(cfg, split='test')
+    data_loader = make_data_loader(cfg, split='val')
     renderer = make_renderer(cfg, network)
     evaluator = make_evaluator(cfg)
     assert evaluator is not None
@@ -100,6 +116,7 @@ def run_evaluate():
         with torch.no_grad():
             output = renderer.render(batch)
         evaluator.evaluate(output, batch)
+        # break
     evaluator.summarize()
 
 def to_cuda(batch):

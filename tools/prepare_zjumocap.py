@@ -499,13 +499,10 @@ def get_bweights(param_path, vertices_path, smpl_path):
     return bweights
 
 def prepare_blend_weights(mocap_data_root, human, params_dir, vertices_dir, smpl_path, lbs_root, begin_frame=0, end_frame=-1, frame_interval=1):
-    annot_path = os.path.join(mocap_data_root, human, 'annots.npy')
-    annot = np.load(annot_path, allow_pickle=True).item()
     bweight_dir = os.path.join(lbs_root, 'bweights')
     os.system(f'mkdir -p {bweight_dir}')
 
-
-    end_frame = len(annot['ims']) if end_frame < 0 else end_frame
+    end_frame = len(os.listdir(params_dir)) if end_frame < 0 else end_frame
     for i in tqdm(range(begin_frame, end_frame, frame_interval)):
         param_path = os.path.join(params_dir, '{}.npy'.format(i))
         vertices_path = os.path.join(vertices_dir, '{}.npy'.format(i))
@@ -523,9 +520,8 @@ def main():
     Inputs
     ----------
     for every human in zju-mocap : 
-        the number of images: from annots.npy
-        params : from params/{}.npy
-        vertices : from vertices/{}.npy
+        params i: from params/{i}.npy
+        vertices i: from vertices/{i}.npy
     SMPL model : SMPL_NEUTRAL.pkl
     SMPL uv : smpl_uv.obj
 
@@ -536,12 +532,12 @@ def main():
     bigpose vertices : lbs/bigpose_vertices.npy
     bigpose blend weight : lbs/bigpose_bw.npy
     bigpose uv : bigpose_uv.npy
-    blend weight for frame i : bweights/{}.npy
+    blend weight for frame i : bweights/{i}.npy
     """
-    mocap_data_root='../data/zju-mocap'
+    mocap_data_root='../data/h36m'
     smpl_data_root='../data/smpl-meta'
-    output_root='../data/output'
-    humans=['my_377']
+    output_root='../data/h36m'
+    humans=['small']
 
     frame_interval=1
     obj_path = '../data/smpl_uv.obj'
@@ -554,7 +550,7 @@ def main():
         vertices_dir=osp.join(mocap_data_root, human, 'smpl_vertices')
         smpl_path=osp.join(smpl_data_root, 'SMPL_NEUTRAL.pkl')
 
-        lbs_root=osp.join(output_root, human, 'lbs')
+        lbs_root=osp.join(output_root, human, 'smpl_lbs')
         os.system(f'mkdir -p {lbs_root}')
 
         begin_frame=0
@@ -567,7 +563,7 @@ def main():
         get_bigpose_blend_weights(begin_frame, params_dir, vertices_dir, smpl_path, lbs_root)
         # get_tpose_blend_weights(begin_frame, params_dir, vertices_dir, smpl_path, lbs_root)
 
-        prepare_blend_weights(mocap_data_root, human, params_dir, vertices_dir, smpl_path, lbs_root, begin_frame=begin_frame, end_frame=last_frame, frame_interval=frame_interval)
+        prepare_blend_weights(mocap_data_root, human, params_dir, vertices_dir, smpl_path, lbs_root, begin_frame=0, end_frame=500, frame_interval=10)
 
 
 if __name__=='__main__':

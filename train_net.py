@@ -134,8 +134,9 @@ def train(cfg, network):
         if cfg.distributed:
             train_loader.batch_sampler.sampler.set_epoch(epoch)
 
-        trainer.train(begin_epoch, train_loader, optimizer, recorder)  # might exists a trainer change
-        scheduler.step()
+        with torch.autograd.detect_anomaly():
+            trainer.train(begin_epoch, train_loader, optimizer, recorder)  # might exists a trainer change
+            scheduler.step()
 
         if (epoch + 1) % cfg.save_ep == 0 and cfg.local_rank == 0:
             save_model(network, optimizer, scheduler, recorder,
