@@ -1,11 +1,22 @@
 import time
 # import open3d as o3d
+import os
+import imageio
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from lib.config import cfg
 
-def get_pre(name):
-    return f"debug/{cfg.exp_name}-{name}"
+def get_pre(name, time = False):
+    if not os.path.exists('debug'): 
+        os.makedirs('debug')
+    if not os.path.exists(f'debug/{cfg.exp_name}'): 
+        os.makedirs(f'debug/{cfg.exp_name}')
+
+    if time:
+        output_dir = f"debug/{cfg.exp_name}/{get_time()}_{name}"
+    else: output_dir = f"debug/{cfg.exp_name}/{name}" 
+    return output_dir
 
 def get_time():
     current_time = time.localtime()
@@ -27,7 +38,8 @@ def to_numpy(a)->np.ndarray:
         raise TypeError('Unsupported data type')
 
 def save_point_cloud(point_cloud, filename):
-    return 
+    if not cfg.debug: return
+    return
     point_cloud = to_numpy(point_cloud)
     
     # 将numpy数组转换为open3d的PointCloud对象
@@ -38,13 +50,33 @@ def save_point_cloud(point_cloud, filename):
     o3d.io.write_point_cloud(get_pre(filename), pcd)
 
 def output_debug_log(output, name):
-    return
+    if not cfg.debug: return
     if type(output) != str:
         output = str(output)
 
     with open(f"{get_pre(name)}.log", 'w') as f:
         f.write(output)
+        f.write('\n')
 
-def save_debug(a, name):
-    return
-    np.save( f'{get_pre(name)}.npy', to_numpy(a))
+def save_debug(a, name, time = False):
+    if not cfg.debug: return
+    np.save( f'{get_pre(name, time)}.npy', to_numpy(a))
+
+def save_img(img, name, time = False):
+    if not cfg.debug: return
+    img = to_numpy(img)
+    img = img * 255
+    img = img.astype(np.uint8)
+    imageio.imwrite(f'{get_pre(name, time)}.png', img)
+
+def save_imgs(msks, name, time = False):
+    if not cfg.debug: return
+    """Save imgs in a grid"""
+    n = len(msks)
+    fig, axs = plt.subplots(-(-n//3), 3, figsize=(15, 5*-(-n//3)))
+    for i, ax in enumerate(axs.flat):
+        ax.axis('off')
+        if i<n:
+            ax.imshow(msks[i])
+    plt.tight_layout()
+    plt.savefig(f'{get_pre(name, time)}.png')

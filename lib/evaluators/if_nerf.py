@@ -12,6 +12,7 @@ except:
 
 from lib.config import cfg
 from lib.utils.blend_utils import partnames
+from lib.utils import debug_utils
 
 
 class Evaluator:
@@ -89,12 +90,17 @@ class Evaluator:
             img_gt[mask_at_box] = rgb_gt
 
             if cfg.eval_part != "":
-                msk = batch['sem_mask'][partnames.index(cfg.eval_part)]
+                msk = batch['sem_mask'][0][partnames.index(cfg.eval_part)].detach().cpu().numpy().astype(bool)
                 img_pred[~msk] = 0
                 img_gt[~msk] = 0
+                debug_utils.save_debug(msk, 'eval_msks_numpy', time=True)
+                debug_utils.save_imgs([msk, ~msk, img_pred, img_gt], 'eval_msks', time=True)
 
             frame_index = batch['frame_index'].item()
             view_index = batch['cam_ind'].item()
+
+            debug_utils.save_img(mask_at_box, f'frame{frame_index:04d}_view{view_index:04d}mask_at_box')
+
             if epoch != -1:
                 result_dir = os.path.join(cfg.result_dir, f'comparison_epoch{epoch}')
             else:

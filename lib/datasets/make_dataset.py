@@ -14,7 +14,7 @@ from termcolor import colored
 torch.multiprocessing.set_sharing_strategy('file_system')
 
 
-def _dataset_factory(split):
+def _dataset_factory(cfg, split):
     splitcfg = getattr(cfg, split)
     if hasattr(splitcfg, "dataset_module") and hasattr(splitcfg, "dataset_kwargs"):
         module = splitcfg.dataset_module
@@ -28,7 +28,7 @@ def _dataset_factory(split):
 
 
 def make_dataset(cfg, dataset_name, transforms, split='train'):
-    dataset = _dataset_factory(split)
+    dataset = _dataset_factory(cfg, split)
     return dataset
 
 

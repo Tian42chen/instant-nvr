@@ -188,7 +188,7 @@ val:
   frame_sampler_interval: 20
 
 eval_ep: 10
-save_latest_ep: 5
+save_latest_ep: 1
 save_ep: 400
 ep_iter: 500
 vis_ep: 100
@@ -247,7 +247,7 @@ bullet:
 
 # data options
 training_view: [4]
-test_view: []
+test_view: [3, 5]
 begin_ith_frame: 0
 num_train_frame: 100
 frame_interval: 5

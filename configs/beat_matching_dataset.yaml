@@ -1,0 +1,105 @@
+task: "beat_matching"
+gpus: [2]
+
+zju_human: ""
+
+train_dataset_module: "lib.datasets.h36m.tpose_dataset"
+val_dataset_module: "lib.datasets.h36m.tpose_dataset"
+test_dataset_module: "lib.datasets.h36m.tpose_dataset"
+prune_dataset_module: "lib.datasets.h36m.tpose_dataset"
+
+N_rand: 1024
+
+# data options
+ratio: 0.5
+
+# partnet config
+
+rgb_resd_loss_coe: 0.01
+
+train:
+  batch_size: 1
+  collator: ""
+  lr: 5e-4
+  eps: 1e-15
+  weight_decay: 0
+  epoch: 6
+  scheduler:
+    type: "exponential"
+    gamma: 0.1
+    decay_epochs: 1000
+  num_workers: 16
+
+test:
+  sampler: "FrameSampler"
+  batch_size: 1
+  frame_sampler_interval: 10
+  collator: ""
+  frame_sampler_interval: 6
+
+val:
+  frame_sampler_interval: 20
+
+eval_ep: 10
+save_latest_ep: 5
+save_ep: 400
+ep_iter: 500
+vis_ep: 100
+
+use_lpips: True
+use_time_embedder: True
+use_reg_distortion: True
+
+smpl: smpl
+lbs: smpl_lbs
+params: smpl_params
+vertices: smpl_vertices
+
+part_deform: False
+patch_size: 64
+
+log_interval: 100
+
+datasets_name: ['inb_377', 'test-zjumocap']
+
+test-zjumocap:
+  train_dataset:
+    data_root: "data/test-zjumocap"
+    human: "test-zjumocap"
+    ann_file: "data/test-zjumocap/annots.npy"
+    split: "train"
+
+  test_dataset:
+    data_root: "data/test-zjumocap"
+    human: "test-zjumocap"
+    ann_file: "data/test-zjumocap/annots.npy"
+    split: "test"
+
+inb_377:
+  train_dataset:
+    data_root: "data/zju-mocap/my_377"
+    human: "my_377"
+    ann_file: "data/zju-mocap/my_377/annots.npy"
+    split: "train"
+
+  test_dataset:
+    data_root: "data/zju-mocap/my_377"
+    human: "my_377"
+    ann_file: "data/zju-mocap/my_377/annots.npy"
+    split: "test"
+
+# data options
+training_view: [4]
+test_view: [3, 5]
+begin_ith_frame: 0
+num_train_frame: 100
+frame_interval: 5
+
+smpl_thresh: 0.05
+exp_name: 'beat_matching'
+pair_loss_weight: 10.0
+
+eval_ratio: 0.5
+silent: False
+
+debug: True

@@ -276,7 +276,7 @@ cfg.vis = 'mesh'
 cfg.body_sample_ratio = 0.5
 cfg.face_sample_ratio = 0.
 
-cfg.debug = False
+cfg.debug = True
 
 cfg.chunk = 4096
 
@@ -326,7 +326,8 @@ def parse_cfg(cfg, args):
     cfg.distributed = cfg.distributed or args.launcher not in ['none']
 
     if cfg.debug:
-        os.environ['PYTHONBREAKPOINT'] = "ipdb.set_trace"
+        # os.environ['PYTHONBREAKPOINT'] = "ipdb.set_trace"
+        os.environ['PYTHONBREAKPOINT'] = "0"
         cfg.train.num_workers = 0
     else:
         os.environ['PYTHONBREAKPOINT'] = "0"

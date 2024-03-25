@@ -1,5 +1,5 @@
-task: "inb"
-gpus: [0]
+task: "h36m"
+gpus: [1]
 
 zju_human: ""
 
@@ -187,7 +187,7 @@ val:
   frame_sampler_interval: 4
 
 eval_ep: 10
-save_latest_ep: 5
+save_latest_ep: 1
 save_ep: 400
 ep_iter: 500
 vis_ep: 100
@@ -246,7 +246,7 @@ bullet:
 
 # data options
 training_view: [1]
-test_view: [1]
+test_view: []
 begin_ith_frame: 0
 num_train_frame: 20
 frame_interval: 1

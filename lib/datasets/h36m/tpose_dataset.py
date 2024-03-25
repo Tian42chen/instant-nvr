@@ -235,6 +235,10 @@ class Dataset(data.Dataset):
         for k in semantic_masks:
             semantic_masks[k] = semantic_masks[k].astype(np.uint8)
 
+        # msks=[msk, face_msk, arm_msk, msk_cihp, body_msk, leg_msk]
+        # msks = [img for img in semantic_masks.values()]
+        # debug_utils.save_imgs(msks, 'msks')
+
         return msk, orig_msk, semantic_masks
 
     def get_normal(self, index):

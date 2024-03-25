@@ -174,7 +174,7 @@ def barycentric_interpolation(val, coords):
     ret = t.sum(axis=1)
     return ret
 
-def get_bigpose_uv(uv_model, human, frame, params_dir, vertices_dir, smpl_path, output_root):
+def get_bigpose_uv(uv_model, frame, params_dir, vertices_dir, smpl_path, output_root):
     i = frame
     param_path = os.path.join(params_dir, '{}.npy'.format(i))
     vertices_path = os.path.join(vertices_dir, '{}.npy'.format(i))
@@ -234,77 +234,7 @@ def get_bigpose_uv(uv_model, human, frame, params_dir, vertices_dir, smpl_path, 
     uvs = barycentric_interpolation(uv_model['uv'][vert_ids], bary_coords)
 
     uvs = uvs.reshape(*sh[:3], 2).astype(np.float32)
-    uv_path = os.path.join(output_root, human, "bigpose_uv.npy")
-    np.save(uv_path, uvs)
-
-    return uvs
-
-def get_bigpose_uvh(uv_model, human, frame, params_dir, vertices_dir, smpl_path, output_root):
-    i = frame
-    param_path = os.path.join(params_dir, '{}.npy'.format(i))
-    vertices_path = os.path.join(vertices_dir, '{}.npy'.format(i))
-
-    params = np.load(param_path, allow_pickle=True).item()
-    vertices = np.load(vertices_path)
-    faces = get_smpl_faces(smpl_path)
-    # mesh = get_o3d_mesh(vertices, faces)
-
-    smpl = read_pickle(smpl_path)
-    # obtain the transformation parameters for linear blend skinning
-    a, r, th, joints = get_transform_params(smpl, params)
-
-    # transform points from the world space to the pose space
-    pxyz = np.dot(vertices - th, r)
-    smpl_mesh = Mesh(pxyz, faces)
-
-    bweights = smpl['weights']
-    a = np.dot(bweights, a.reshape(24, -1)).reshape(-1, 4, 4)
-    can_pts = pxyz - a[:, :3, 3]
-    r_inv = np.linalg.inv(a[:, :3, :3])
-    pxyz = np.sum(r_inv * can_pts[:, None], axis=2)
-
-    # calculate big pose
-    poses = params['poses'].reshape(-1, 3)
-    big_poses = np.zeros_like(poses).ravel()
-    angle = 30
-    big_poses[5] = np.deg2rad(angle)
-    big_poses[8] = np.deg2rad(-angle)
-    # big_poses = big_poses.reshape(-1, 3)
-    # big_poses[1] = np.array([0, 0, 7. / 180. * np.pi])
-    # big_poses[2] = np.array([0, 0, -7. / 180. * np.pi])
-    # big_poses[16] = np.array([0, 0, -55. / 180. * np.pi])
-    # big_poses[17] = np.array([0, 0, 55. / 180. * np.pi])
-
-    big_poses = big_poses.reshape(-1, 3)
-    rot_mats = batch_rodrigues(big_poses)
-    parents = smpl['kintree_table'][0]
-    big_a = get_rigid_transformation(rot_mats, joints, parents)
-    big_a = np.dot(bweights, big_a.reshape(24, -1)).reshape(-1, 4, 4)
-
-    bigpose_vertices = np.sum(big_a[:, :3, :3] * pxyz[:, None], axis=2)
-    bigpose_vertices = bigpose_vertices + big_a[:, :3, 3]
-
-    smpl_mesh = Mesh(bigpose_vertices, faces)
-    smpl_mesh_trimesh = trimesh.Trimesh(vertices=bigpose_vertices, faces=faces)
-
-    # create grid points in the pose space
-    pts = get_grid_points(bigpose_vertices)
-    sh = pts.shape
-    pts = pts.reshape(-1, 3)
-
-    # obtain the blending weights for grid points
-    closest_face, closest_points = smpl_mesh.closest_faces_and_points(pts)
-    vert_ids, bary_coords = smpl_mesh.barycentric_coordinates_for_points(
-        closest_points, closest_face.astype('int32'))
-
-    dist = np.linalg.norm(pts - closest_points, axis=1)
-    # dist = mesh_to_sdf.mesh_to_sdf(smpl_mesh_trimesh, pts)
-
-    uvs = barycentric_interpolation(uv_model['uv'][vert_ids], bary_coords)
-    uvs = np.concatenate((uvs, dist[..., None]), axis=1)
-
-    uvs = uvs.reshape(*sh[:3], 3).astype(np.float32)
-    uv_path = os.path.join(output_root, human, "bigpose_uvh.npy")
+    uv_path = os.path.join(output_root, "bigpose_uv.npy")
     np.save(uv_path, uvs)
 
     return uvs
@@ -399,63 +329,6 @@ def get_bigpose_blend_weights(frame, params_dir, vertices_dir, smpl_path, lbs_ro
 
     return bweights
 
-def get_tpose_blend_weights(frame, params_dir, vertices_dir, smpl_path, lbs_root):
-    i = frame
-    param_path = os.path.join(params_dir, '{}.npy'.format(i))
-    vertices_path = os.path.join(vertices_dir, '{}.npy'.format(i))
-
-    params = np.load(param_path, allow_pickle=True).item()
-    vertices = np.load(vertices_path)
-    faces = get_smpl_faces(smpl_path)
-    # mesh = get_o3d_mesh(vertices, faces)
-
-    smpl = read_pickle(smpl_path)
-    # obtain the transformation parameters for linear blend skinning
-    A, R, Th, joints = get_transform_params(smpl, params)
-
-    parent_path = os.path.join(lbs_root, 'parents.npy')
-    np.save(parent_path, smpl['kintree_table'][0])
-    joint_path = os.path.join(lbs_root, 'joints.npy')
-    np.save(joint_path, joints)
-
-    # transform points from the world space to the pose space
-    pxyz = np.dot(vertices - Th, R)
-    smpl_mesh = Mesh(pxyz, faces)
-
-    bweights = smpl['weights']
-    A = np.dot(bweights, A.reshape(24, -1)).reshape(-1, 4, 4)
-    can_pts = pxyz - A[:, :3, 3]
-    R_inv = np.linalg.inv(A[:, :3, :3])
-    pxyz = np.sum(R_inv * can_pts[:, None], axis=2)
-
-    tvertices_path = os.path.join(lbs_root, 'tvertices.npy')
-    np.save(tvertices_path, pxyz)
-
-    smpl_mesh = Mesh(pxyz, faces)
-
-    # create grid points in the pose space
-    pts = get_grid_points(pxyz)
-    sh = pts.shape
-    pts = pts.reshape(-1, 3)
-
-    # obtain the blending weights for grid points
-    closest_face, closest_points = smpl_mesh.closest_faces_and_points(pts)
-    vert_ids, bary_coords = smpl_mesh.barycentric_coordinates_for_points(
-        closest_points, closest_face.astype('int32'))
-    bweights = barycentric_interpolation(smpl['weights'][vert_ids],
-                                         bary_coords)
-
-    # calculate the distance to the smpl surface
-    norm = np.linalg.norm(pts - closest_points, axis=1)
-
-    bweights = np.concatenate((bweights, norm[:, None]), axis=1)
-    bweights = bweights.reshape(*sh[:3], 25).astype(np.float32)
-    bweight_path = os.path.join(lbs_root, 'tbw.npy')
-    np.save(bweight_path, bweights)
-
-    return bweights
-
-
 def get_bweights(param_path, vertices_path, smpl_path):
     params = np.load(param_path, allow_pickle=True).item()
     vertices = np.load(vertices_path)
@@ -498,7 +371,7 @@ def get_bweights(param_path, vertices_path, smpl_path):
 
     return bweights
 
-def prepare_blend_weights(mocap_data_root, human, params_dir, vertices_dir, smpl_path, lbs_root, begin_frame=0, end_frame=-1, frame_interval=1):
+def prepare_blend_weights(params_dir, vertices_dir, smpl_path, lbs_root, begin_frame=0, end_frame=-1, frame_interval=1):
     bweight_dir = os.path.join(lbs_root, 'bweights')
     os.system(f'mkdir -p {bweight_dir}')
 
@@ -511,6 +384,21 @@ def prepare_blend_weights(mocap_data_root, human, params_dir, vertices_dir, smpl
         np.save(bweight_path, bweights)
         # if i>=10:
         #     break
+
+def prepare_dataset(frame_interval, uv_model, smpl_path, mocap_data_root, output_root):
+    params_dir=osp.join(mocap_data_root, 'smpl_params')
+    vertices_dir=osp.join(mocap_data_root, 'smpl_vertices')
+    lbs_root=osp.join(output_root, 'smpl_lbs')
+    os.system(f'mkdir -p {lbs_root}')
+
+    begin_frame=0
+    last_frame = len(os.listdir(params_dir)) + begin_frame
+
+    get_bigpose_uv(uv_model, begin_frame, params_dir, vertices_dir, smpl_path, output_root)
+    get_bigpose_blend_weights(begin_frame, params_dir, vertices_dir, smpl_path, lbs_root)
+
+    prepare_blend_weights(params_dir, vertices_dir, smpl_path, lbs_root, begin_frame, last_frame, frame_interval)
+
 
 
 def main():
@@ -534,36 +422,28 @@ def main():
     bigpose uv : bigpose_uv.npy
     blend weight for frame i : bweights/{i}.npy
     """
-    mocap_data_root='../data/h36m'
+    mocap_data_root='../data/test-zjumocap'
     smpl_data_root='../data/smpl-meta'
-    output_root='../data/h36m'
-    humans=['small']
+    output_root='../data/test-zjumocap'
+    # humans=['small']
+    humans = None
 
     frame_interval=1
     obj_path = '../data/smpl_uv.obj'
 
     uv_model=load_obj(obj_path)
+    smpl_path=osp.join(smpl_data_root, 'SMPL_NEUTRAL.pkl')
 
-    for human in humans:
-        print(f'Processing {human} ...')
-        params_dir=osp.join(mocap_data_root, human, 'smpl_params')
-        vertices_dir=osp.join(mocap_data_root, human, 'smpl_vertices')
-        smpl_path=osp.join(smpl_data_root, 'SMPL_NEUTRAL.pkl')
+    if humans is None:
+        print(f'Processing {mocap_data_root.split("/")[-1]} ...')
+        prepare_dataset(frame_interval, uv_model, smpl_path, mocap_data_root, output_root)
+    else:
+        for human in humans: # type: ignore
+            print(f'Processing {human} ...')
+            mocap_data_root = osp.join(mocap_data_root, human)
+            output_root = osp.join(output_root, human)
 
-        lbs_root=osp.join(output_root, human, 'smpl_lbs')
-        os.system(f'mkdir -p {lbs_root}')
-
-        begin_frame=0
-        last_frame = len(os.listdir(params_dir)) + begin_frame
-
-        n_bones=24
-
-        get_bigpose_uv(uv_model, human, begin_frame, params_dir, vertices_dir, smpl_path, output_root)
-        # get_bigpose_uvh(uv_model, human, begin_frame, params_dir, vertices_dir, smpl_path, output_root)
-        get_bigpose_blend_weights(begin_frame, params_dir, vertices_dir, smpl_path, lbs_root)
-        # get_tpose_blend_weights(begin_frame, params_dir, vertices_dir, smpl_path, lbs_root)
-
-        prepare_blend_weights(mocap_data_root, human, params_dir, vertices_dir, smpl_path, lbs_root, begin_frame=0, end_frame=500, frame_interval=10)
+            prepare_dataset(frame_interval, uv_model, smpl_path, mocap_data_root, output_root)
 
 
 if __name__=='__main__':

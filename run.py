@@ -1,5 +1,4 @@
 from lib.config import cfg, args
-from lib.utils import debug_utils
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning) 
 
@@ -7,26 +6,55 @@ warnings.filterwarnings("ignore", category=UserWarning)
 def run_dataset():
     from lib.datasets import make_data_loader
     import tqdm
-    import numpy as np
 
     cfg.train.num_workers = 0
     data_loader = make_data_loader(cfg, split='train')
-    bounds_array=[]
 
+    i=0 
     for batch in tqdm.tqdm(data_loader):
-        # debug_utils.output_debug_log(batch, 'dataset')
-        bounds_array.append(debug_utils.to_numpy(batch['bounds'])[0])
         pass
+        break
+        i+=1
+        if i>10:
+            break
+
+
+def run_dataset_beat_matching():
+    from lib.datasets import make_data_loader
+    import tqdm
+    import torch
+    from lib.utils import debug_utils
+
+    cfg.train.num_workers = 0
+
+    datasets_name = cfg.datasets_name
+    data_loaders = []
+    matching_items = ['mask_at_box']
+
+    for name in datasets_name:
+        cfg_ = cfg.clone()
+        cfg_.merge_from_other_cfg(getattr(cfg, name))
+
+        data_loader = make_data_loader(cfg_, split='test')
+        data_loaders.append(data_loader)
     
-    bounds_array=np.array(bounds_array)
-    print(bounds_array.shape)
-
-    min_bounds=np.min(bounds_array[:,:,0,:], axis=0)[:, np.newaxis, :]
-    max_bounds=np.max(bounds_array[:,:,1,:], axis=0)[:, np.newaxis, :]
-
-    extra_bounds=np.concatenate([min_bounds, max_bounds], axis=1)
-    print(extra_bounds.shape)
-    np.save('debug/extra_bounds', extra_bounds)
+    for batchs in tqdm.tqdm(zip(*data_loaders)):
+        beats = {key: None for key in matching_items}
+        for name, batch in zip(datasets_name, batchs):
+            print(name)
+            # for key, item in batch.items():
+            #     print(f"{key}: ", item.shape)
+            for key in matching_items:
+                print(f"{key}: ", batch[key].shape)
+                if beats[key] is None:
+                    beats[key]=batch[key]
+                else:
+                    if not torch.equal(beats[key], batch[key]):
+                        print(f"not match {key}")
+                        debug_utils.save_debug(beats[key], f'{key}-beats')
+                        debug_utils.save_debug(batch[key], f'{key}-{name}')
+                        raise ValueError
+        
 
 
 def run_network():
@@ -97,6 +125,7 @@ def run_evaluate():
 
     cfg.perturb = 0
     cfg.eval = True
+    cfg.resume = False
 
     network = make_network(cfg).cuda()
     net_utils.load_network(network,
