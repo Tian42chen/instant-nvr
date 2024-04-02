@@ -422,18 +422,17 @@ def main():
     bigpose uv : bigpose_uv.npy
     blend weight for frame i : bweights/{i}.npy
     """
-    mocap_data_root='../data/test-zjumocap'
+    mocap_data_root='../data/internet-rotate'
     smpl_data_root='../data/smpl-meta'
-    output_root='../data/test-zjumocap'
-    # humans=['small']
-    humans = None
+    output_root='../data/internet-rotate'
+    humans=None
+    # humans = None
 
     frame_interval=1
     obj_path = '../data/smpl_uv.obj'
 
     uv_model=load_obj(obj_path)
     smpl_path=osp.join(smpl_data_root, 'SMPL_NEUTRAL.pkl')
-
     if humans is None:
         print(f'Processing {mocap_data_root.split("/")[-1]} ...')
         prepare_dataset(frame_interval, uv_model, smpl_path, mocap_data_root, output_root)

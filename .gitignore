@@ -9,6 +9,7 @@ __pycache__/
 *.pth
 *.npy
 *.ipynb
+*.out
 /data/
 exps/
 debug/

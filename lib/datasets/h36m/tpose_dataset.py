@@ -358,13 +358,14 @@ class Dataset(data.Dataset):
             i = int(os.path.basename(img_path)[:-4])
             frame_index = i
 
+        debug_utils.save_debug(frame_index, 'frame_index')
+
         # read v_shaped
         if cfg.bigpose:
             vertices_path = os.path.join(self.lbs_root, 'bigpose_vertices.npy')
         else:
             vertices_path = os.path.join(self.lbs_root, 'tvertices.npy')
         tpose = np.load(vertices_path).astype(np.float32)
-        # save_point_cloud(tpose, 'debug/tpose_{}.ply'.format(get_time()))
         tbounds = if_nerf_dutils.get_bounds(tpose)
         if cfg.bigpose:
             tbw = np.load(os.path.join(self.lbs_root, 'bigpose_bw.npy'))
@@ -387,9 +388,9 @@ class Dataset(data.Dataset):
         pbounds = if_nerf_dutils.get_bounds(ppts)
         wbounds = if_nerf_dutils.get_bounds(wpts)
 
-        # debug_utils.save_debug(wpts, 'batch_wpts')
-        # debug_utils.save_debug(ppts, 'batch_ppts')
-        # debug_utils.save_debug(wbounds, 'batch_wbounds')
+        debug_utils.save_debug(wpts, 'batch_wpts')
+        debug_utils.save_debug(ppts, 'batch_ppts')
+        debug_utils.save_debug(wbounds, 'batch_wbounds')
         # debug_utils.save_debug(pbounds, 'batch_pbounds')
         # debug_utils.save_debug(pbw, 'batch_pbw')
 
@@ -428,6 +429,7 @@ class Dataset(data.Dataset):
         elif (cfg.use_lpips or cfg.patch_sampling or cfg.use_ssim or cfg.use_fourier or cfg.use_tv_image) and self.split == 'train':
             img_old = img.copy()
             msk_old = msk.copy()
+            debug_utils.save_imgs([img, msk], 'old')
             if cfg.sample_focus == "" or semantic_masks[cfg.sample_focus].sum() == 0:
                 ret_crop = if_nerf_dutils.crop_image_msk(img, msk, K, msk)
             else:
@@ -438,9 +440,10 @@ class Dataset(data.Dataset):
                 img, msk, K, _ = ret_crop
             else:
                 pass
-
+            debug_utils.save_imgs([img, msk], 'origin')
             if self.split == 'train':
                 img, msk, K = if_nerf_dutils.random_crop_image(img, msk, K)
+            debug_utils.save_imgs([img, msk], 'crop')
             H, W = img.shape[:2]
             ray_o, ray_d, near, far, mask_at_box, coord = if_nerf_dutils.get_rays_within_bounds_coord(H, W, K, R, T, wbounds)
             rgb = img[mask_at_box]
@@ -469,10 +472,11 @@ class Dataset(data.Dataset):
             'mask_at_box': mask_at_box
         }
 
-        # debug_utils.save_debug(ray_o, 'batch_ray_o')
-        # debug_utils.save_debug(ray_d, 'batch_ray_d')
-        # debug_utils.save_debug(near, 'batch_near')
-        # debug_utils.save_debug(far, 'batch_far')
+        debug_utils.save_debug(ray_o, 'batch_ray_o')
+        debug_utils.save_debug(ray_d, 'batch_ray_d')
+        debug_utils.save_debug(near, 'batch_near')
+        debug_utils.save_debug(far, 'batch_far')
+        debug_utils.save_debug(mask_at_box, 'mask_at_box')
 
         if cfg.train_with_normal:
             # normal is extracted from undistroted image
@@ -610,6 +614,8 @@ class Dataset(data.Dataset):
                 'lengths2': lengths2,
                 'bounds': bounds,
             })
+            debug_utils.save_debug(bounds, 'bounds')
+            debug_utils.save_debug(tpose, 'tpose')
 
         return ret
 

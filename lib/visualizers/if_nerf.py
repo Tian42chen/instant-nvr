@@ -23,7 +23,7 @@ class Visualizer:
     def visualize_image(self, output, batch):
         rgb_pred = output['rgb_map'][0].detach().cpu().numpy()
         rgb_gt = batch['rgb'][0].detach().cpu().numpy()
-        print('mse: {}'.format(np.mean((rgb_pred - rgb_gt)**2)))
+        # print('mse: {}'.format(np.mean((rgb_pred - rgb_gt)**2)))
 
         if rgb_pred.shape == (1024, 3):
             img_pred = rgb_pred.reshape(32, 32, 3)

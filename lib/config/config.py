@@ -276,7 +276,7 @@ cfg.vis = 'mesh'
 cfg.body_sample_ratio = 0.5
 cfg.face_sample_ratio = 0.
 
-cfg.debug = True
+cfg.debug = False
 
 cfg.chunk = 4096
 

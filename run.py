@@ -78,9 +78,9 @@ def run_network():
     print("Finish data_loader")
     total_time = 0
     epoch=0 
-    for batch in data_loader:
-        print(f"passing epoch {epoch}")
-        epoch+=1
+    for batch in tqdm.tqdm(data_loader):
+        # print(f"passing epoch {epoch}")
+        # epoch+=1
         for k in batch:
             if k != 'meta':
                 batch[k] = batch[k].cuda()
@@ -93,7 +93,7 @@ def run_network():
         # if epoch >2:
         #     print("Finish test")
         #     break
-    # print(total_time / len(data_loader))
+    print(total_time / len(data_loader))
 
 def run_exportdecoder():
     from lib.networks import make_network
@@ -125,7 +125,7 @@ def run_evaluate():
 
     cfg.perturb = 0
     cfg.eval = True
-    cfg.resume = False
+    cfg.resume = True
 
     network = make_network(cfg).cuda()
     net_utils.load_network(network,
@@ -174,6 +174,7 @@ def run_vis():
     from lib.visualizers import make_visualizer
     from lib.networks.renderer import make_renderer
 
+    cfg.resume = True
     cfg.perturb = 0
 
     network = make_network(cfg).cuda()

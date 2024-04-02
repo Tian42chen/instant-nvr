@@ -1,31 +1,91 @@
-import time
 # import open3d as o3d
 import os
 import imageio
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from lib.config import cfg
+from termcolor import colored
+import subprocess
+import time
+import datetime
+import shutil
 
-def get_pre(name, time = False):
-    if not os.path.exists('debug'): 
-        os.makedirs('debug')
-    if not os.path.exists(f'debug/{cfg.exp_name}'): 
-        os.makedirs(f'debug/{cfg.exp_name}')
 
-    if time:
-        output_dir = f"debug/{cfg.exp_name}/{get_time()}_{name}"
-    else: output_dir = f"debug/{cfg.exp_name}/{name}" 
-    return output_dir
+def toc():
+    return time.time() * 1000
+
+def myprint(cmd, level):
+    color = {'run': 'blue', 'info': 'green', 'warn': 'yellow', 'error': 'red'}[level]
+    print(colored(cmd, color))
+
+def log(text):
+    myprint(text, 'info')
+
+def log_time(text):
+    strf = get_time()
+    print(colored(strf, 'yellow'), colored(text, 'green'))
+
+def mywarn(text):
+    myprint(text, 'warn')
+
+warning_infos = set()
+
+def oncewarn(text):
+    if text in warning_infos:
+        return
+    warning_infos.add(text)
+    myprint(text, 'warn')
+
+
+def myerror(text):
+    myprint(text, 'error')
+
+def run_cmd(cmd, verbo=True, bg=False):
+    if verbo: myprint('[run] ' + cmd, 'run')
+    if bg:
+        args = cmd.split()
+        print(args)
+        p = subprocess.Popen(args)
+        return [p]
+    else:
+        os.system(cmd)
+        return []
+
+def mkdir(path):
+    if os.path.exists(path):
+        return 0
+    log('mkdir {}'.format(path))
+    os.makedirs(path, exist_ok=True)
+
+def cp(srcname, dstname):
+    mkdir(os.join(os.path.dirname(dstname)))
+    shutil.copyfile(srcname, dstname)
+
+try:
+    from lib.config import cfg
+
+    def get_pre(name, time = False):
+        if not os.path.exists('debug'): 
+            os.makedirs('debug')
+        if not os.path.exists(f'debug/{cfg.exp_name}'): 
+            os.makedirs(f'debug/{cfg.exp_name}')
+
+        if time:
+            output_dir = f"debug/{cfg.exp_name}/{get_time()}_{name}"
+        else: output_dir = f"debug/{cfg.exp_name}/{name}" 
+        return output_dir
+except:
+    def get_pre(name, time = False):
+        if not os.path.exists('debug'): 
+            os.makedirs('debug')
+
+        if time:
+            output_dir = f"debug/{get_time()}_{name}"
+        else: output_dir = f"debug/{name}" 
+        return output_dir
 
 def get_time():
-    current_time = time.localtime()
-    month = str(current_time.tm_mon).zfill(2)
-    day = str(current_time.tm_mday).zfill(2)
-    hour = str(current_time.tm_hour).zfill(2)
-    minute = str(current_time.tm_min).zfill(2)
-    second= str(current_time.tm_sec).zfill(2)
-    return month + day + '-' + hour + ':' + minute + ':' + second
+    return datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
 
 def to_numpy(a)->np.ndarray:
     if type(a) == torch.Tensor:
@@ -35,7 +95,10 @@ def to_numpy(a)->np.ndarray:
     elif type(a) == np.ndarray:
         return a
     else:
-        raise TypeError('Unsupported data type')
+        try:
+            return np.array(a)
+        except:
+            raise TypeError('Unsupported data type')
 
 def save_point_cloud(point_cloud, filename):
     if not cfg.debug: return
@@ -80,3 +143,4 @@ def save_imgs(msks, name, time = False):
             ax.imshow(msks[i])
     plt.tight_layout()
     plt.savefig(f'{get_pre(name, time)}.png')
+    plt.close()
