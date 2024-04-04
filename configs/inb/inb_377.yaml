@@ -245,6 +245,15 @@ bullet:
     split: "test"
   visualizer_module: "lib.visualizers.if_nerf_demo"
 
+tmesh:
+    dataset_module: 'lib.datasets.h36m.tpose_dataset_mesh'
+    dataset_kwargs:
+        data_root: 'data/zju-mocap/my_377'
+        human: 'my_377'
+        ann_file: 'data/zju-mocap/my_377/annots.npy'
+        split: 'tmesh'
+    renderer_module: 'lib.networks.renderer.pose_mesh_renderer'
+
 # data options
 training_view: [4]
 test_view: []
