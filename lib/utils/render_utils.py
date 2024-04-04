@@ -79,7 +79,7 @@ def gen_path(RT, center=None):
         center = RT[:, :3, 3].mean(0)
         z_off = 1.3
 
-    c2w = np.stack([up, vec1, vec2, center], 1)
+    c2w = np.stack([up, vec1, vec2, center], 1) # a virtual camera at the center with up vector following the negative gravity direction.
 
     # get radii for spiral path
     tt = ptstocam(RT[:, :3, 3], c2w).T
@@ -88,6 +88,7 @@ def gen_path(RT, center=None):
     rads = np.array(list(rads) + [1.])
 
     render_w2c = []
+    import pudb; pudb.set_trace()
     for theta in np.linspace(0., 2 * np.pi, cfg.render_views + 1)[:-1]:
         # camera position
         cam_pos = np.array([0, np.sin(theta), np.cos(theta), 1] * rads)
