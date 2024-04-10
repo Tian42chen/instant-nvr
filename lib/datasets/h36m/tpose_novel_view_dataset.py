@@ -12,8 +12,6 @@ from plyfile import PlyData
 from lib.utils import render_utils
 from lib.utils.blend_utils import NUM_PARTS, part_bw_map, partnames
 
-SHOW_FRAME = 100
-
 
 class Dataset(data.Dataset):
     def __init__(self, data_root, human, ann_file, split):
@@ -30,8 +28,7 @@ class Dataset(data.Dataset):
         view = cfg.training_view if split == 'train' else test_view
         self.num_cams = len(view)
         K, RT = render_utils.load_cam(ann_file)
-        center = np.array([0., 0., 5.])
-        render_w2c = render_utils.gen_path(RT, center)
+        render_w2c = render_utils.gen_path(RT, center = None)
 
         i = cfg.begin_ith_frame
         self.ims = np.array([
@@ -293,6 +290,6 @@ class Dataset(data.Dataset):
         return ret
 
     def __len__(self):
-        # return len(self.render_w2c)
+        return len(self.render_w2c)
         # return cfg.num_train_frame
-        return cfg.num_latent_code
+        # return cfg.num_latent_code
