@@ -59,6 +59,7 @@ cfg.sample_focus = ""
 
 # data
 cfg.human = 313
+cfg.ratio = 1
 cfg.training_view = [0, 6, 12, 18]
 cfg.test_view = []
 cfg.begin_ith_frame = 0  # the first smpl

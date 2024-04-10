@@ -1,0 +1,19 @@
+task: "monocular"
+exp_name: "abab"
+gpus: [0]
+
+default_cfg_path: "configs/default.yml"
+models_path: 'data/models'
+smpl_path: 'data/smpl-meta'
+data_root: 'data/abab'
+
+tmp_path: '/mnt/data/chenke'
+
+begin_ith_frame: 0
+num_train_frame: 200
+frame_interval: 1
+
+
+# 3rdparty
+easymocap_path: '~/opt/EasyMocap'
+schp_path: '~/opt/EasyMocap/3rdparty/Self-Correction-Human-Parsing'

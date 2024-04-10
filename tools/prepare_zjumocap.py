@@ -5,10 +5,18 @@ import numpy as np
 import cv2
 # import mesh_to_sdf
 from psbody.mesh import Mesh
+import argparse
 import pickle
 import trimesh
 from tqdm import tqdm
-from pathlib import Path
+from termcolor import colored
+
+def myprint(cmd, level):
+    color = {'run': 'blue', 'info': 'green', 'warn': 'yellow', 'error': 'red'}[level]
+    print(colored(cmd, color))
+
+def log(text):
+    myprint(text, 'info')
 
 def load_obj(path):
     model = {}
@@ -174,17 +182,17 @@ def barycentric_interpolation(val, coords):
     ret = t.sum(axis=1)
     return ret
 
-def get_bigpose_uv(uv_model, frame, params_dir, vertices_dir, smpl_path, output_root):
+def get_bigpose_uv(frame, params_dir, vertices_dir, output_root):
     i = frame
     param_path = os.path.join(params_dir, '{}.npy'.format(i))
     vertices_path = os.path.join(vertices_dir, '{}.npy'.format(i))
 
     params = np.load(param_path, allow_pickle=True).item()
     vertices = np.load(vertices_path)
-    faces = get_smpl_faces(smpl_path)
+    faces = get_smpl_faces(smpl_model_path)
     # mesh = get_o3d_mesh(vertices, faces)
 
-    smpl = read_pickle(smpl_path)
+    smpl = read_pickle(smpl_model_path)
     # obtain the transformation parameters for linear blend skinning
     a, r, th, joints = get_transform_params(smpl, params)
 
@@ -239,17 +247,17 @@ def get_bigpose_uv(uv_model, frame, params_dir, vertices_dir, smpl_path, output_
 
     return uvs
 
-def get_bigpose_blend_weights(frame, params_dir, vertices_dir, smpl_path, lbs_root):
+def get_bigpose_blend_weights(frame, params_dir, vertices_dir, lbs_root):
     i = frame
     param_path = os.path.join(params_dir, '{}.npy'.format(i))
     vertices_path = os.path.join(vertices_dir, '{}.npy'.format(i))
 
     params = np.load(param_path, allow_pickle=True).item()
     vertices = np.load(vertices_path)
-    faces = get_smpl_faces(smpl_path)
+    faces = get_smpl_faces(smpl_model_path)
     # mesh = get_o3d_mesh(vertices, faces)
 
-    smpl = read_pickle(smpl_path)
+    smpl = read_pickle(smpl_model_path)
     # obtain the transformation parameters for linear blend skinning
     A, R, Th, joints = get_transform_params(smpl, params)
 
@@ -371,37 +379,35 @@ def get_bweights(param_path, vertices_path, smpl_path):
 
     return bweights
 
-def prepare_blend_weights(params_dir, vertices_dir, smpl_path, lbs_root, begin_frame=0, end_frame=-1, frame_interval=1):
+def prepare_blend_weights(params_dir, vertices_dir, lbs_root):
     bweight_dir = os.path.join(lbs_root, 'bweights')
-    os.system(f'mkdir -p {bweight_dir}')
+    os.makedirs(bweight_dir, exist_ok=True)
 
-    end_frame = len(os.listdir(params_dir)) if end_frame < 0 else end_frame
     for i in tqdm(range(begin_frame, end_frame, frame_interval)):
-        param_path = os.path.join(params_dir, '{}.npy'.format(i))
-        vertices_path = os.path.join(vertices_dir, '{}.npy'.format(i))
-        bweights = get_bweights(param_path, vertices_path, smpl_path)
-        bweight_path = os.path.join(bweight_dir, '{}.npy'.format(i))
+        param_path = os.path.join(params_dir, f'{i}.npy')
+        vertices_path = os.path.join(vertices_dir, f'{i}.npy')
+        bweights = get_bweights(param_path, vertices_path, smpl_model_path)
+        bweight_path = os.path.join(bweight_dir, f'{i}.npy')
         np.save(bweight_path, bweights)
-        # if i>=10:
-        #     break
 
-def prepare_dataset(frame_interval, uv_model, smpl_path, mocap_data_root, output_root):
-    params_dir=osp.join(mocap_data_root, 'smpl_params')
-    vertices_dir=osp.join(mocap_data_root, 'smpl_vertices')
+
+def prepare_dataset(data_root, output_root):
+    params_dir=osp.join(data_root, 'smpl_params')
+    vertices_dir=osp.join(data_root, 'smpl_vertices')
     lbs_root=osp.join(output_root, 'smpl_lbs')
-    os.system(f'mkdir -p {lbs_root}')
+    os.makedirs(lbs_root, exist_ok=True)
 
-    begin_frame=0
-    last_frame = len(os.listdir(params_dir)) + begin_frame
+    log('getting bigpose uv ...')
+    get_bigpose_uv(begin_frame, params_dir, vertices_dir, output_root)
+    log('getting bigpose blend weights ...')
+    get_bigpose_blend_weights(begin_frame, params_dir, vertices_dir,lbs_root)
 
-    get_bigpose_uv(uv_model, begin_frame, params_dir, vertices_dir, smpl_path, output_root)
-    get_bigpose_blend_weights(begin_frame, params_dir, vertices_dir, smpl_path, lbs_root)
-
-    prepare_blend_weights(params_dir, vertices_dir, smpl_path, lbs_root, begin_frame, last_frame, frame_interval)
+    log('getting blend weights ...')
+    prepare_blend_weights(params_dir, vertices_dir, lbs_root)
 
 
 
-def main():
+if __name__=='__main__':
     """
     ZJUMOCAP's pre-processing
 
@@ -422,28 +428,32 @@ def main():
     bigpose uv : bigpose_uv.npy
     blend weight for frame i : bweights/{i}.npy
     """
-    mocap_data_root='../data/internet-rotate'
-    smpl_data_root='../data/smpl-meta'
-    output_root='../data/internet-rotate'
-    humans=None
-    # humans = None
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--data_root", default="data", type=str)
+    parser.add_argument("--output_root", default="data", type=str)
+    parser.add_argument("--smpl_model_path", default="SMPL_NEUTRAL.pkl", type=str)
+    parser.add_argument("--smpl_uv_path", default="smpl_uv.obj", type=str)
+    parser.add_argument('--ranges', type=int, default=None, nargs=3)
+    parser.add_argument("--humans", default=None, type=str, nargs='+')
+    args = parser.parse_args()
 
-    frame_interval=1
-    obj_path = '../data/smpl_uv.obj'
-
-    uv_model=load_obj(obj_path)
-    smpl_path=osp.join(smpl_data_root, 'SMPL_NEUTRAL.pkl')
+    data_root = args.data_root
+    output_root = args.output_root
+    smpl_model_path = args.smpl_model_path
+    smpl_uv_path = args.smpl_uv_path
+    begin_frame, end_frame, frame_interval = args.ranges
+    humans = args.humans
+    
+    uv_model=load_obj(smpl_uv_path)
     if humans is None:
-        print(f'Processing {mocap_data_root.split("/")[-1]} ...')
-        prepare_dataset(frame_interval, uv_model, smpl_path, mocap_data_root, output_root)
+        log(f'Processing {data_root.split(os.sep)[-1]} ...')
+        prepare_dataset(data_root, output_root)
     else:
-        for human in humans: # type: ignore
-            print(f'Processing {human} ...')
-            mocap_data_root = osp.join(mocap_data_root, human)
-            output_root = osp.join(output_root, human)
+        for human in humans:
+            log(f'Processing {human} ...')
+            sub_data_root = osp.join(data_root, human)
+            sub_output_root = osp.join(output_root, human)
 
-            prepare_dataset(frame_interval, uv_model, smpl_path, mocap_data_root, output_root)
+            prepare_dataset(sub_data_root, sub_output_root)
 
 
-if __name__=='__main__':
-    main()

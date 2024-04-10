@@ -48,7 +48,9 @@ def run_cmd(cmd, verbo=True, bg=False):
         p = subprocess.Popen(args)
         return [p]
     else:
-        os.system(cmd)
+        exit_status = os.system(cmd)
+        if exit_status != 0:
+            raise RuntimeError
         return []
 
 def mkdir(path):
@@ -60,6 +62,12 @@ def mkdir(path):
 def cp(srcname, dstname):
     mkdir(os.join(os.path.dirname(dstname)))
     shutil.copyfile(srcname, dstname)
+
+def check_exists(path):
+    flag1 = os.path.isfile(path) and os.path.exists(path)
+    flag2 = os.path.isdir(path) and len(os.listdir(path)) >= 10
+    return flag1 or flag2
+
 
 try:
     from lib.config import cfg
