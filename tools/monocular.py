@@ -67,16 +67,23 @@ def easymocap():
     models_path = osp.join(easymocap_path, 'data/models')
     symlink(cfg.models_path, models_path)
 
+    if not check_exists('images'):
+        global ed
+        assert check_exists('videos'), 'videos not found'
+        cmd = f'''python3 {osp.join(easymocap_path, 'apps/preprocess/extract_image.py')} {data_root} --num {ed}'''
+        run_cmd(cmd)
+
+        imgs_num = len(os.listdir(osp.join(data_root, 'images', os.listdir(osp.join(data_root, 'images'))[0])))
+        if imgs_num < ed: 
+            ed = imgs_num
+    else:
+        log(f'[INFO] Images already exist')
+
     if not check_exists('annots'):
         cmd = f'''cd {easymocap_path} && python apps/preprocess/extract_keypoints.py {data_root} --mode yolo-hrnet  --gpu {" ".join([f"{i}" for i in cfg.gpus])}'''
         run_cmd(cmd)
     else:
         log(f'[INFO] Keypoints already exist')
-
-    global ed
-    imgs_num = len(os.listdir(osp.join(data_root, 'images', os.listdir(osp.join(data_root, 'images'))[0])))
-    if imgs_num < ed: 
-        ed = imgs_num
 
     # Second, we need to fit SMPL model to the keypoints
     # Here, we load our SMPL model and regressor, and delete the unnecessary parts in cfg
@@ -168,7 +175,7 @@ def schp():
 def script():
     # convert images, cameras and SMPL to Instant-NVR format
     if not check_exists(['annots.npy', 'smpl_params', 'smpl_vertices']):
-        cmd = f'''python tools/easymocap2instant-nvr.py --data_root {data_root} --model_path {smpl_model_path} --regressor_path {smpl_regressor_path}'''
+        cmd = f'''python tools/easymocap2instant-nvr.py --data_root {data_root} --model_path {smpl_model_path} --regressor_path {smpl_regressor_path} --ranges {st} {ed} {interval}'''
         run_cmd(cmd)
     else:
         log(f'[INFO] Annots already exist')
@@ -230,8 +237,13 @@ if __name__ == '__main__':
     interval = cfg.frame_interval
     ed = st + cfg.num_train_frame * interval
 
+    start_time = time.time()
+
     easymocap()
     schp()
     script()
 
     instant_nvr()
+
+    end_time = time.time()
+    log(f'[INFO] Time elapsed: {end_time - start_time:.2f}s')

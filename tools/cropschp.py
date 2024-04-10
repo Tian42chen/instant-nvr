@@ -33,10 +33,11 @@ if __name__ == '__main__':
     schp_path = os.path.join(data_root, 'schp')
 
     for sub_dir in os.listdir(schp_path):
-        sub_path = os.path.join(schp_path, sub_dir)
-        for schp_img in tqdm.tqdm(sorted(os.listdir(sub_path))[0:]):
-            full_schp_img = os.path.join(sub_path, schp_img)
-            full_annot = full_schp_img.replace('schp', 'annots').replace('png', 'json')
+        sub_schp_path = os.path.join(schp_path, sub_dir)
+        sub_annot_path = os.path.join(annots_path, sub_dir)
+        for schp_img in tqdm.tqdm(sorted(os.listdir(sub_schp_path))[0:]):
+            full_schp_img = os.path.join(sub_schp_path, schp_img)
+            full_annot = os.path.join(sub_annot_path, schp_img.replace('.png', '.json'))
 
             # print(annot_path)
             with open(full_annot, 'r') as f:
@@ -55,12 +56,18 @@ if __name__ == '__main__':
 
             # print(schp_path)
             img = imageio.v2.imread(full_schp_img)
+            # fix bbox
+            max_bbox[0] = max(max_bbox[0], 0)
+            max_bbox[1] = max(max_bbox[1], 0)
+            max_bbox[2] = min(max_bbox[2], img.shape[1])
+            max_bbox[3] = min(max_bbox[3], img.shape[0])
+
             img[:max_bbox[1], :] = [0, 0, 0, 255]  # 上
             img[max_bbox[3]:, :] = [0, 0, 0, 255]  # 下
             img[:, :max_bbox[0]] = [0, 0, 0, 255]  # 左
             img[:, max_bbox[2]:] = [0, 0, 0, 255]  # 右
 
-            imageio.imwrite(full_schp_img, img)
+            # imageio.imwrite(full_schp_img, img)
             # plt.imshow(img)
             # plt.scatter([max_bbox[0], max_bbox[2]], [max_bbox[1], max_bbox[3]])
             # plt.show()

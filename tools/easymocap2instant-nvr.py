@@ -22,8 +22,10 @@ if __name__ == '__main__':
     parser.add_argument("--data_root", default="data", type=str)
     parser.add_argument("--model_path", default="SMPL_NEUTRAL.pkl", type=str)
     parser.add_argument("--regressor_path", default="J_regressor_body25.npy", type=str)
+    parser.add_argument('--ranges', type=int, default=None, nargs=3)
     args = parser.parse_args()
 
+    st, ed, interval = args.ranges
     data_root= args.data_root
     log(f"[INFO] Processing {data_root}...")
 
@@ -71,7 +73,7 @@ if __name__ == '__main__':
     image_list=[]
     for sub_dir in sorted(os.listdir(images_dir)):
         sub_dir=os.path.join(images_dir, sub_dir)
-        for image_path in sorted(os.listdir(sub_dir)):
+        for image_path in sorted(os.listdir(sub_dir))[st:ed:interval]:
             image_path=os.path.join(sub_dir, image_path)
             image_path=image_path.split(data_root)[-1][1:]
             image_list.append(image_path)

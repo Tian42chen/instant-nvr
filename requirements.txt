@@ -10,3 +10,4 @@ matplotlib-inline==0.1.6
 plyfile==0.7.4
 lpips==0.1.4
 scikit-image==0.19.3
+ruamel.yaml

@@ -1,17 +1,17 @@
 task: "monocular"
-exp_name: "abab"
+exp_name: "dance"
 gpus: [0]
 
 default_cfg_path: "configs/default.yml"
 models_path: 'data/models'
 smpl_path: 'data/smpl-meta'
-data_root: 'data/abab'
+data_root: 'data/dance'
 
-tmp_path: '/mnt/data/chenke'
+# tmp_path: '/mnt/data/'
 
 begin_ith_frame: 0
 num_train_frame: 200
-frame_interval: 1
+frame_interval: 3
 
 
 # 3rdparty
