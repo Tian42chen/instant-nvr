@@ -254,8 +254,8 @@ tmesh:
     renderer_module: 'lib.networks.renderer.pose_mesh_renderer'
 
 # data options
-training_view: []
-test_view: []
+training_view: [0]
+test_view: [0]
 begin_ith_frame: 0
 num_train_frame: 200
 frame_interval: 1
