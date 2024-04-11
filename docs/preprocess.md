@@ -138,7 +138,7 @@ flowchart TD
 
 ```
 
-## 环境配置
+## Environment Configuration
 ### [instant-nvr](https://zju3dv.github.io/instant_nvr/)
 ```shell
 conda create -n instant-nvr python=3.9
@@ -152,10 +152,9 @@ cd instant-nvr
 pip install -r requirements.txt
 ```
 
-
 ### [easymocap](https://chingswy.github.io/easymocap-public-doc/install/install.html#20230630-update)
-书接上文 python 3.9, torch 1.13.0, cuda 11.7 的环境  
-更新最新的 `setuptools`
+Continuing from the previous text, the environment is python 3.9, torch 1.13.0, cuda 11.7.  
+Update to the latest `setuptools`.
 ```bash
 pip install -U setuptools
 ```
@@ -185,38 +184,38 @@ git clone https://github.com/chingswy/Self-Correction-Human-Parsing.git
 
 
 
-### 杂项
+### Miscellaneous
 ```bash
 sudo apt-get install libboost-dev
 git clone https://github.com/MPI-IS/mesh.git
-pip install --upgrade pip==22.3.1 # 回滚 pip 到 22.3.1
+pip install --upgrade pip==22.3.1 # Rollback pip to 22.3.1
 cd mesh
-vim requirements.txt # 删除 requirements.txt 中 pyopengl, numpy
+vim requirements.txt # Delete pyopengl, numpy from requirements.txt
 make all 
-pip install numpy==1.23 # smpl 需要 chumpy, chumpy 需要 numpy <= 1.23
+pip install numpy==1.23 # smpl needs chumpy, chumpy needs numpy <= 1.23
 ```
 
-## 权重下载
-需要下载一些权重
-1. 在 [这里](https://drive.google.com/drive/folders/1hOTihvbyIxsm5ygDpbUuJ7O_tzv4oXjC) 下载 `pose_hrnet_w48_384x288.pth`
-2. `torch.hub.load` 会联网下载 `yolov5m`
-3. 同样需要准备 `yolov4.weight`, 在 [这里](https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v3_optimal/yolov4.weights)
-4.  [在这](https://github.com/mkocabas/PARE/releases/download/v0.1/pare-github-data.zip) 下载 pare 在 3dpw 数据集上的预训练模型, 需要的是:
+## Models Download
+Some models need to be downloaded:
+1. Download `pose_hrnet_w48_384x288.pth` from [here](https://drive.google.com/drive/folders/1hOTihvbyIxsm5ygDpbUuJ7O_tzv4oXjC).
+2. `torch.hub.load` will download `yolov5m` online.
+3. Also need to prepare `yolov4.weight`, available [here](https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v3_optimal/yolov4.weights).
+4. Download the pre-trained model of pare on the 3dpw dataset from [here](https://github.com/mkocabas/PARE/releases/download/v0.1/pare-github-data.zip), what you need are:
 ```
 pare-github-data\data\pare\checkpoints\pare_w_3dpw_checkpoint.ckpt
 pare-github-data\data\pare\checkpoints\pare_w_3dpw_config.yaml
 pare-github-data\data\smpl_mean_params.npz
 ```
-5. 在 [这里](https://drive.google.com/drive/folders/1uOaQCpNtosIjEL2phQKEdiYd0Td18jNo) 下载参数 
+5. Download parameters from [here](https://drive.google.com/drive/folders/1uOaQCpNtosIjEL2phQKEdiYd0Td18jNo).
 ```
 detectron2_maskrcnn_cihp_finetune.pth
 exp_schp_multi_cihp_global.pth
 exp_schp_multi_cihp_local.pth
 exp-schp-201908261155-lip.pth
 ```
-6. [smpl](https://smpl.is.tue.mpg.de/) 需要向相关人员申请.
+6. [smpl](https://smpl.is.tue.mpg.de/) needs to be applied from relevant personnel.
 
-文件结构示例:
+File structure example:
 ```
 path/to/models
 ├── pare
@@ -248,17 +247,16 @@ path/to/data
     └── video.mp4
 ```
 
-## 快速开始
+## Quick Start
 ```
 cd instant-nvr
 python tools/monocular.py --cfg_file configs/monocular.yml
 ```
+Remember to modify the parameters in `configs/monocular.yml`.
 
-记得修改 `configs/monocular.yml` 中的参数.
-
-## 预处理 分步
-### 0. 准备视频
-以这个[视频](https://youtu.be/23EfsN7vEOA?si=vqeDG7wMtXUo9H-0)为例.
+## Preprocessing Step-by-step
+### 0. Prepare Video
+Take this [video](https://youtu.be/23EfsN7vEOA?si=vqeDG7wMtXUo9H-0) as an example.
 ```
 data/internet-rotate
 └── videos
@@ -279,8 +277,8 @@ cd EasyMocap
 python apps/preprocess/extract_keypoints.py ${data_root} --mode yolo-hrnet --gpu 1
 emc --data config/datasets/svimage.yml --exp config/1v1p/hrnet_pare_finetune.yml --root ${data_root} --ranges 0 200 1 --subs 23EfsN7vEOA+003170+003670
 ```
-第一步提取 keypoints, 细节参考 [doc](https://chingswy.github.io/easymocap-public-doc/quickstart/keypoints.html#yolov4hrnet)  
-第二步单目估计 smpl, 细节参考 [doc](https://chingswy.github.io/easymocap-public-doc/quickstart/quickstart.html#demo-on-monocular-videos), 记得修改 `hrnet_pare_finetune.yml` 中的 `regressor_path` 与 `model_path` 分别指向 `smpl_regressor_path` 与 `smpl_model_path`. 删除不必要的 `render` 与 `make_video` 部分.
+The first step is to extract keypoints, details refer to [doc](https://chingswy.github.io/easymocap-public-doc/quickstart/keypoints.html#yolov4hrnet).  
+The second step is monocular estimation of smpl, details refer to [doc](https://chingswy.github.io/easymocap-public-doc/quickstart/quickstart.html#demo-on-monocular-videos), remember to modify `regressor_path` and `model_path` in `hrnet_pare_finetune.yml` to point to `smpl_regressor_path` and `smpl_model_path` respectively. Remove unnecessary `render` and `make_video` parts.
 
 
 ### 2. schp
@@ -290,29 +288,30 @@ python extract_multi.py ${data_root} --ckpt_dir ${schp_models_path} --subs 0 --g
 mv ${data_root}/mask-schp-parsing ${data_root}/schp
 python tools/cropschp.py --data_root ${data_root}
 ```
-细节参考 [doc](https://chingswy.github.io/easymocap-public-doc/install/install_segment.html#schp-self-correction-for-human-parsing). 最好使用绝对目录, 因为程序中会改变运行的目录, 可能会导致花里胡哨的问题.   
-`cropschp.py`是为了把多余的人裁去.
+Details refer to [doc](https://chingswy.github.io/easymocap-public-doc/install/install_segment.html#schp-self-correction-for-human-parsing). It is best to use absolute directories, because the program will change the running directory, which may cause fancy problems.   
+`cropschp.py` is to cut off the extra people.
 
-### 3. 转换数据格式
-#### 3.1. 转换 easymocap 
+
+### 3. Convert data format
+#### 3.1. Convert easymocap 
 ```bash
 cd instant-nvr
 python tools/easymocap2instant-nvr.py --data_root ${data_root} --model_path ${smpl_model_path} --regressor_path ${smpl_regressor_path} --ranges 0 200 1
 ```
 
-#### 3.2. 转换 smpl
+#### 3.2. Convert smpl
 ```bash
 cd instant-nvr
 python tools/prepare_zjumocap.py --data_root ${data_root} --output_root ${data_root} --smpl_model_path ${smpl_model_path} --smpl_uv_path ${smpl_uv_path} --ranges 0 200 1
 ```
 
-## 训练
+## Train
 ```shell
 python train_net.py --cfg_file ${cfg_path}
 ```
-根据 `default.yml` 制作 cfg, 修改 `[train, val, test]_dataset` 中的 `data_root`, `ann_file` 指向正确的路径. 
+Make cfg according to `default.yml`, modify `data_root`, `ann_file` in `[train, val, test]_dataset` to point to the correct path. 
 
-## 可视化
+## Visualization
 ```shell
 python run.py --type vis --cfg_file ${cfg_path}
 ```
